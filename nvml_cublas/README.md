@@ -9,8 +9,7 @@ Also provided is a Matlab script used to plot the data.
 To run, all one must do is execute *make* in the Release directory. You might need to add the compute capability of the device you are using to the make process. Everything is included to import files into Nsight as well.
 
 ### Prerequisites
-This **makefile** expects a symbolic link to the CUDA directory
-```/usr/local/cuda```. This can be changed to the desired CUDA version.
+CUDA toolkit with symbolic link to the CUDA directory ```/usr/local/cuda```.
 
 ### Built With
 This example utilizes the following toolsets:
