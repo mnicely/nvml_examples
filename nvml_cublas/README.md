@@ -6,7 +6,7 @@ This example utilizing the NVML Library and C++11 mutlithreading to provide GPU 
 Also provided is a Matlab script used to plot the data.
 
 ## Getting started
-To run, all one must do is execute *make* in the Release directory. You might need to add the compute capability of the device you are using to the make process. Everything is included to import files into Nsight as well.
+Import example into Eclipse with NsightEE plugin and build.
 
 ### Prerequisites
 CUDA toolkit with symbolic link to the CUDA directory ```/usr/local/cuda```.
