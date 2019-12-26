@@ -53,158 +53,153 @@
 
 #include <nvml.h>
 
-auto constexpr sizeOfVector = 100000;
+auto constexpr sizeOfVector                 = 100000;
 auto constexpr nvml_device_name_buffer_size = 100;
 
 template<typename T>
-void check( T const & errCode, std::string const & file, int const & line ) {
-	if ( errCode ) {
-		cudaDeviceReset( );
-		std::string str = nvmlErrorString( errCode );
-		throw std::runtime_error( str + " in " + file + " at line " + std::to_string( line ) );
-	}
+void check( T const &errCode, std::string const &file, int const &line ) {
+    if ( errCode ) {
+        cudaDeviceReset( );
+        std::string str = nvmlErrorString( errCode );
+        throw std::runtime_error( str + " in " + file + " at line " + std::to_string( line ) );
+    }
 }
 
-#define checkNVMLErrors( errCode ) check( errCode, __FILE__, __LINE__)
+#define checkNVMLErrors( errCode ) check( errCode, __FILE__, __LINE__ )
 
 class nvmlClass {
-public:
-	nvmlClass( int const & deviceID, std::string const & _filename ) :
-			filename { _filename },
-			loop { false } {
+  public:
+    nvmlClass( int const &deviceID, std::string const &_filename ) : filename { _filename }, loop { false } {
 
-		char name[nvml_device_name_buffer_size];
+        char name[nvml_device_name_buffer_size];
 
-		// Initialize NVML library
-		checkNVMLErrors( nvmlInit( ) );
+        // Initialize NVML library
+        checkNVMLErrors( nvmlInit( ) );
 
-		// Query device handle
-		checkNVMLErrors( nvmlDeviceGetHandleByIndex(deviceID, &device) );
+        // Query device handle
+        checkNVMLErrors( nvmlDeviceGetHandleByIndex( deviceID, &device ) );
 
-		// Query device name
-		checkNVMLErrors( nvmlDeviceGetName( device, name, nvml_device_name_buffer_size ) );
+        // Query device name
+        checkNVMLErrors( nvmlDeviceGetName( device, name, nvml_device_name_buffer_size ) );
 
-		// Reserve memory for data
-		timeSteps.reserve( sizeOfVector );
+        // Reserve memory for data
+        timeSteps.reserve( sizeOfVector );
 
-		// Open file
-		outfile.open( filename, std::ios::out );
+        // Open file
+        outfile.open( filename, std::ios::out );
 
-		// Print header
-		printHeader();
-	}
+        // Print header
+        printHeader( );
+    }
 
-	~nvmlClass( ) {
+    ~nvmlClass( ) {
 
-		checkNVMLErrors( nvmlShutdown( ) );
+        checkNVMLErrors( nvmlShutdown( ) );
 
-		writeData( );
-	}
+        writeData( );
+    }
 
-	void getStats( ) {
+    void getStats( ) {
 
-		stats deviceStats { };
-		loop = true;
+        stats deviceStats {};
+        loop = true;
 
-		while ( loop ) {
-			deviceStats.timestamp = std::chrono::high_resolution_clock::now( ).time_since_epoch( ).count( );
-			checkNVMLErrors( nvmlDeviceGetTemperature( device, NVML_TEMPERATURE_GPU, &deviceStats.temperature ) );
-			checkNVMLErrors( nvmlDeviceGetPowerUsage( device, &deviceStats.powerUsage ) );
-			checkNVMLErrors( nvmlDeviceGetEnforcedPowerLimit( device, &deviceStats.powerLimit ) );
-			checkNVMLErrors( nvmlDeviceGetUtilizationRates( device, &deviceStats.utilization ) );
-			checkNVMLErrors( nvmlDeviceGetMemoryInfo( device, &deviceStats.memory ) );
-			checkNVMLErrors( nvmlDeviceGetCurrentClocksThrottleReasons( device, &deviceStats.throttleReasons ) );
-			checkNVMLErrors( nvmlDeviceGetClock( device, NVML_CLOCK_SM, NVML_CLOCK_ID_CURRENT, &deviceStats.clockSM ) );
-			checkNVMLErrors( nvmlDeviceGetClock( device, NVML_CLOCK_GRAPHICS, NVML_CLOCK_ID_APP_CLOCK_TARGET, &deviceStats.clockGraphics ) );
-			checkNVMLErrors( nvmlDeviceGetClock( device, NVML_CLOCK_MEM, NVML_CLOCK_ID_CURRENT, &deviceStats.clockMemory ) );
-			checkNVMLErrors( nvmlDeviceGetClock( device, NVML_CLOCK_MEM, NVML_CLOCK_ID_APP_CLOCK_TARGET, &deviceStats.clockMemoryMax ) );
-			checkNVMLErrors( nvmlDeviceGetPerformanceState( device, &deviceStats.performanceState ) );
+        while ( loop ) {
+            deviceStats.timestamp = std::chrono::high_resolution_clock::now( ).time_since_epoch( ).count( );
+            checkNVMLErrors( nvmlDeviceGetTemperature( device, NVML_TEMPERATURE_GPU, &deviceStats.temperature ) );
+            checkNVMLErrors( nvmlDeviceGetPowerUsage( device, &deviceStats.powerUsage ) );
+            checkNVMLErrors( nvmlDeviceGetEnforcedPowerLimit( device, &deviceStats.powerLimit ) );
+            checkNVMLErrors( nvmlDeviceGetUtilizationRates( device, &deviceStats.utilization ) );
+            checkNVMLErrors( nvmlDeviceGetMemoryInfo( device, &deviceStats.memory ) );
+            checkNVMLErrors( nvmlDeviceGetCurrentClocksThrottleReasons( device, &deviceStats.throttleReasons ) );
+            checkNVMLErrors( nvmlDeviceGetClock( device, NVML_CLOCK_SM, NVML_CLOCK_ID_CURRENT, &deviceStats.clockSM ) );
+            checkNVMLErrors( nvmlDeviceGetClock(
+                device, NVML_CLOCK_GRAPHICS, NVML_CLOCK_ID_APP_CLOCK_TARGET, &deviceStats.clockGraphics ) );
+            checkNVMLErrors(
+                nvmlDeviceGetClock( device, NVML_CLOCK_MEM, NVML_CLOCK_ID_CURRENT, &deviceStats.clockMemory ) );
+            checkNVMLErrors( nvmlDeviceGetClock(
+                device, NVML_CLOCK_MEM, NVML_CLOCK_ID_APP_CLOCK_TARGET, &deviceStats.clockMemoryMax ) );
+            checkNVMLErrors( nvmlDeviceGetPerformanceState( device, &deviceStats.performanceState ) );
 
-			timeSteps.push_back( deviceStats );
+            timeSteps.push_back( deviceStats );
 
-			std::this_thread::sleep_for( std::chrono::milliseconds( 1 ) );
-		}
-	}
+            std::this_thread::sleep_for( std::chrono::milliseconds( 1 ) );
+        }
+    }
 
-	void killThread( ) {
+    void killThread( ) {
 
-		// Retrieve a few empty samples
-		std::this_thread::sleep_for( std::chrono::seconds( 2 ) );
+        // Retrieve a few empty samples
+        std::this_thread::sleep_for( std::chrono::seconds( 2 ) );
 
-		// Set loop to false to exit while loop
-		loop = false;
-	}
+        // Set loop to false to exit while loop
+        loop = false;
+    }
 
-private:
-	typedef struct _stats {
-		std::time_t timestamp;
-		uint temperature;
-		uint powerUsage;
-		uint powerLimit;
-		nvmlUtilization_t utilization;
-		nvmlMemory_t memory;
-		unsigned long long throttleReasons;
-		uint clockSM;
-		uint clockGraphics;
-		uint clockMemory;
-		uint clockMemoryMax;
-		nvmlPstates_t performanceState;
-	} stats;
+  private:
+    typedef struct _stats {
+        std::time_t        timestamp;
+        uint               temperature;
+        uint               powerUsage;
+        uint               powerLimit;
+        nvmlUtilization_t  utilization;
+        nvmlMemory_t       memory;
+        unsigned long long throttleReasons;
+        uint               clockSM;
+        uint               clockGraphics;
+        uint               clockMemory;
+        uint               clockMemoryMax;
+        nvmlPstates_t      performanceState;
+    } stats;
 
-	std::vector<std::string> names = {
-			"timestamp",
-			"temperature_gpu",
-			"power_draw_w",
-			"power_limit_w",
-			"utilization_gpu",
-			"utilization_memory",
-			"memory_used_mib",
-			"memory_free_mib",
-			"clocks_throttle_reasons_active",
-			"clocks_current_sm_mhz",
-			"clocks_applications_graphics_mhz",
-			"clocks_current_memory_mhz",
-			"clocks_max_memory_mhz",
-			"pstate" };
+    std::vector<std::string> names = { "timestamp",
+                                       "temperature_gpu",
+                                       "power_draw_w",
+                                       "power_limit_w",
+                                       "utilization_gpu",
+                                       "utilization_memory",
+                                       "memory_used_mib",
+                                       "memory_free_mib",
+                                       "clocks_throttle_reasons_active",
+                                       "clocks_current_sm_mhz",
+                                       "clocks_applications_graphics_mhz",
+                                       "clocks_current_memory_mhz",
+                                       "clocks_max_memory_mhz",
+                                       "pstate" };
 
-	std::vector<stats> timeSteps { };
-	std::string filename { };
-	std::ofstream outfile { };
-	nvmlDevice_t device { };
-	bool loop { };
+    std::vector<stats> timeSteps {};
+    std::string        filename {};
+    std::ofstream      outfile {};
+    nvmlDevice_t       device {};
+    bool               loop {};
 
-	void printHeader( ) {
+    void printHeader( ) {
 
-		// Print header
-		for ( int i = 0; i < ( static_cast<int>( names.size( ) ) - 1 ); i++ )
-			outfile << names[i] << ", ";
-		outfile << names[static_cast<int>( names.size( ) ) - 1]; // Leave off the last comma
-		outfile << "\n";
-	}
+        // Print header
+        for ( int i = 0; i < ( static_cast<int>( names.size( ) ) - 1 ); i++ )
+            outfile << names[i] << ", ";
+        outfile << names[static_cast<int>( names.size( ) ) - 1]; // Leave off the last comma
+        outfile << "\n";
+    }
 
-	void writeData( ) {
+    void writeData( ) {
 
-		printf("Writing NVIDIA-SMI data -> %s\n\n", filename.c_str());
+        printf( "Writing NVIDIA-SMI data -> %s\n\n", filename.c_str( ) );
 
-		// Print data
-		for ( int i = 0; i < static_cast<int>( timeSteps.size( ) ); i++ ) {
-			outfile << timeSteps[i].timestamp << ", "
-					<< timeSteps[i].temperature << ", "
-					<< timeSteps[i].powerUsage/1000 << ", "		// Convert mW to W
-					<< timeSteps[i].powerLimit/1000 << ", "		// Convert mW to W
-					<< timeSteps[i].utilization.gpu << ", "
-					<< timeSteps[i].utilization.memory << ", "
-					<< timeSteps[i].memory.used/1000000 << ", "	// Convert B to MB
-					<< timeSteps[i].memory.free/1000000 << ", "	// Convert B to MB
-					<< timeSteps[i].throttleReasons << ", "
-					<< timeSteps[i].clockSM << ", "
-					<< timeSteps[i].clockGraphics << ", "
-					<< timeSteps[i].clockMemory << ", "
-					<< timeSteps[i].clockMemoryMax << ", "
-					<< timeSteps[i].performanceState << "\n";
-		}
-		outfile.close();
-	}
+        // Print data
+        for ( int i = 0; i < static_cast<int>( timeSteps.size( ) ); i++ ) {
+            outfile << timeSteps[i].timestamp << ", " << timeSteps[i].temperature << ", "
+                    << timeSteps[i].powerUsage / 1000 << ", " // Convert mW to W
+                    << timeSteps[i].powerLimit / 1000 << ", " // Convert mW to W
+                    << timeSteps[i].utilization.gpu << ", " << timeSteps[i].utilization.memory << ", "
+                    << timeSteps[i].memory.used / 1000000 << ", " // Convert B to MB
+                    << timeSteps[i].memory.free / 1000000 << ", " // Convert B to MB
+                    << timeSteps[i].throttleReasons << ", " << timeSteps[i].clockSM << ", "
+                    << timeSteps[i].clockGraphics << ", " << timeSteps[i].clockMemory << ", "
+                    << timeSteps[i].clockMemoryMax << ", " << timeSteps[i].performanceState << "\n";
+        }
+        outfile.close( );
+    }
 };
 
 #endif /* NVMLCLASS_H_ */

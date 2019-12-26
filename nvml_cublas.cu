@@ -49,88 +49,89 @@
 #include <cublas_v2.h>
 #include <cuda_runtime.h>
 #include <helper_cuda.h>
-#include <thrust/host_vector.h>
 #include <thrust/device_vector.h>
+#include <thrust/host_vector.h>
 
 /* Includes, custom */
 #include "nvmlClass.h"
 
-void calculate( int const & m, int const & n, int const & k, nvmlClass & nvml ) {
+void calculate( int const &m, int const &n, int const &k, nvmlClass &nvml ) {
 
-	float alpha = 1.0f, beta = 0.0f;
-	int lda = m, ldb = k, ldc = m;
+    float alpha = 1.0f, beta = 0.0f;
+    int   lda = m, ldb = k, ldc = m;
 
-	size_t sizeA = m * k;
-	size_t sizeB = k * n;
-	size_t sizeC = m * n;
+    size_t sizeA = m * k;
+    size_t sizeB = k * n;
+    size_t sizeC = m * n;
 
-	cublasHandle_t handle;
+    cublasHandle_t handle;
 
-	/* Initialize CUBLAS */
-	checkCudaErrors( cublasCreate( &handle ) );
+    /* Initialize CUBLAS */
+    checkCudaErrors( cublasCreate( &handle ) );
 
-	/* Initialize CUBLAS */
-	printf( "cublasSgemm %dx%dx%d test running..\n", m, n, k );
+    /* Initialize CUBLAS */
+    printf( "cublasSgemm %dx%dx%d test running..\n", m, n, k );
 
-	/* Allocate host memory for the matrices */
-	thrust::host_vector<float> h_A( sizeA, 0 );
-	thrust::host_vector<float> h_B( sizeB, 0 );
-	thrust::host_vector<float> h_C( sizeC, 0 );
-	thrust::host_vector<float> h_C_ref( sizeC, 0 );
+    /* Allocate host memory for the matrices */
+    thrust::host_vector<float> h_A( sizeA, 0 );
+    thrust::host_vector<float> h_B( sizeB, 0 );
+    thrust::host_vector<float> h_C( sizeC, 0 );
+    thrust::host_vector<float> h_C_ref( sizeC, 0 );
 
-	/* Fill the matrices with test data */
-	/* Assume square matrices */
-	for ( int i = 0; i < m * m; i++ ) {
-		h_A[i] = rand( ) / static_cast<float>( RAND_MAX );
-		h_B[i] = rand( ) / static_cast<float>( RAND_MAX );
-	}
+    /* Fill the matrices with test data */
+    /* Assume square matrices */
+    for ( int i = 0; i < m * m; i++ ) {
+        h_A[i] = rand( ) / static_cast<float>( RAND_MAX );
+        h_B[i] = rand( ) / static_cast<float>( RAND_MAX );
+    }
 
-	/* Create thread to gather GPU stats */
-	std::thread threadStart( &nvmlClass::getStats, &nvml );   // threadStart starts running
+    /* Create thread to gather GPU stats */
+    std::thread threadStart( &nvmlClass::getStats, &nvml ); // threadStart starts running
 
-	/* Allocate device memory for the matrices */
-	thrust::device_vector<float> d_A( h_A );
-	thrust::device_vector<float> d_B( h_B );
-	thrust::device_vector<float> d_C( sizeC, 0 );
+    /* Allocate device memory for the matrices */
+    thrust::device_vector<float> d_A( h_A );
+    thrust::device_vector<float> d_B( h_B );
+    thrust::device_vector<float> d_C( sizeC, 0 );
 
-	/* Retrieve raw pointer for device data */
-	float * d_A_ptr = thrust::raw_pointer_cast( &d_A[0] );
-	float * d_B_ptr = thrust::raw_pointer_cast( &d_B[0] );
-	float * d_C_ptr = thrust::raw_pointer_cast( &d_C[0] );
+    /* Retrieve raw pointer for device data */
+    float *d_A_ptr = thrust::raw_pointer_cast( &d_A[0] );
+    float *d_B_ptr = thrust::raw_pointer_cast( &d_B[0] );
+    float *d_C_ptr = thrust::raw_pointer_cast( &d_C[0] );
 
-	/* Performs operation using cublas */
-	cublasSgemm( handle, CUBLAS_OP_N, CUBLAS_OP_N, m, n, k, &alpha, d_A_ptr, lda, d_B_ptr, ldb, &beta, d_C_ptr, ldc );
-	checkCudaErrors( cudaDeviceSynchronize( ) );
+    /* Performs operation using cublas */
+    cublasSgemm( handle, CUBLAS_OP_N, CUBLAS_OP_N, m, n, k, &alpha, d_A_ptr, lda, d_B_ptr, ldb, &beta, d_C_ptr, ldc );
+    checkCudaErrors( cudaDeviceSynchronize( ) );
 
-	/* Allocate host memory for reading back the result from device memory */
-	h_C = d_C;
+    /* Allocate host memory for reading back the result from device memory */
+    h_C = d_C;
 
-	/* Create thread to kill GPU stats */
-	/* Join both threads to main */
-	std::thread threadKill( &nvmlClass::killThread, &nvml );
-	threadStart.join( );
-	threadKill.join( );
+    /* Create thread to kill GPU stats */
+    /* Join both threads to main */
+    std::thread threadKill( &nvmlClass::killThread, &nvml );
+    threadStart.join( );
+    threadKill.join( );
 
-	/* Shutdown */
-	checkCudaErrors( cublasDestroy( handle ) );
+    /* Shutdown */
+    checkCudaErrors( cublasDestroy( handle ) );
 }
 
 /* Main */
 int main( int argc, char **argv ) {
 
-	int dev = findCudaDevice( argc, ( const char ** ) argv );
-	if ( dev == -1 ) throw std::runtime_error( "!!!! No CUDA device found\n" );
-    
-    cudaSetDevice(1);
+    int dev = findCudaDevice( argc, ( const char ** )argv );
+    if ( dev == -1 )
+        throw std::runtime_error( "!!!! No CUDA device found\n" );
+
+    cudaSetDevice( 1 );
     dev = 1;
 
-	std::string filename = { "data/gpuStats.csv" };
+    std::string filename = { "data/gpuStats.csv" };
 
-	// Create NVML class to retrieve GPU stats
-	nvmlClass nvml( dev, filename );
+    // Create NVML class to retrieve GPU stats
+    nvmlClass nvml( dev, filename );
 
-	for ( int i = 512; i <= 16834; i *= 2 )
-		calculate( i, i, i, nvml );
+    for ( int i = 512; i <= 16834; i *= 2 )
+        calculate( i, i, i, nvml );
 
-	return ( EXIT_SUCCESS );
+    return ( EXIT_SUCCESS );
 }
