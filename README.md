@@ -5,17 +5,15 @@ This example utilizing the NVML Library and C++11 mutlithreading to provide GPU 
 
 Also provided is a Matlab script used to plot the data.
 
-## Getting started
-Import example into Eclipse with NsightEE plugin and build.
-
 ### Prerequisites
-CUDA toolkit with symbolic link to the CUDA directory ```/usr/local/cuda```.
+Example requires Tesla card because some calls are not supported on Geforce family.
 
 ### Built With
 This example utilizes the following toolsets:
 * cuBLAS
 * Thrust
 * C++11 multithreading
+* NVIDIA Management Library (NVML)
 
 ### Deployment
 Include header class
