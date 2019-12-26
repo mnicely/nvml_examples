@@ -103,24 +103,24 @@ public:
 
 	void getStats( ) {
 
-		stats temp { };
+		stats deviceStats { };
 		loop = true;
 
 		while ( loop ) {
-			temp.timestamp = std::chrono::high_resolution_clock::now( ).time_since_epoch( ).count( );
-			checkNVMLErrors( nvmlDeviceGetTemperature( device, NVML_TEMPERATURE_GPU, &temp.temperature ) );
-			checkNVMLErrors( nvmlDeviceGetPowerUsage( device, &temp.powerUsage ) );
-			checkNVMLErrors( nvmlDeviceGetEnforcedPowerLimit( device, &temp.powerLimit ) );
-			checkNVMLErrors( nvmlDeviceGetUtilizationRates( device, &temp.utilization ) );
-			checkNVMLErrors( nvmlDeviceGetMemoryInfo( device, &temp.memory ) );
-			checkNVMLErrors( nvmlDeviceGetCurrentClocksThrottleReasons( device, &temp.throttleReasons ) );
-			checkNVMLErrors( nvmlDeviceGetClock( device, NVML_CLOCK_SM, NVML_CLOCK_ID_CURRENT, &temp.clockSM ) );
-			checkNVMLErrors( nvmlDeviceGetClock( device, NVML_CLOCK_GRAPHICS, NVML_CLOCK_ID_APP_CLOCK_TARGET, &temp.clockGraphics ) );
-			checkNVMLErrors( nvmlDeviceGetClock( device, NVML_CLOCK_MEM, NVML_CLOCK_ID_CURRENT, &temp.clockMemory ) );
-			checkNVMLErrors( nvmlDeviceGetClock( device, NVML_CLOCK_MEM, NVML_CLOCK_ID_APP_CLOCK_TARGET, &temp.clockMemoryMax ) );
-			checkNVMLErrors( nvmlDeviceGetPerformanceState( device, &temp.performanceState ) );
+			deviceStats.timestamp = std::chrono::high_resolution_clock::now( ).time_since_epoch( ).count( );
+			checkNVMLErrors( nvmlDeviceGetTemperature( device, NVML_TEMPERATURE_GPU, &deviceStats.temperature ) );
+			checkNVMLErrors( nvmlDeviceGetPowerUsage( device, &deviceStats.powerUsage ) );
+			checkNVMLErrors( nvmlDeviceGetEnforcedPowerLimit( device, &deviceStats.powerLimit ) );
+			checkNVMLErrors( nvmlDeviceGetUtilizationRates( device, &deviceStats.utilization ) );
+			checkNVMLErrors( nvmlDeviceGetMemoryInfo( device, &deviceStats.memory ) );
+			checkNVMLErrors( nvmlDeviceGetCurrentClocksThrottleReasons( device, &deviceStats.throttleReasons ) );
+			checkNVMLErrors( nvmlDeviceGetClock( device, NVML_CLOCK_SM, NVML_CLOCK_ID_CURRENT, &deviceStats.clockSM ) );
+			checkNVMLErrors( nvmlDeviceGetClock( device, NVML_CLOCK_GRAPHICS, NVML_CLOCK_ID_APP_CLOCK_TARGET, &deviceStats.clockGraphics ) );
+			checkNVMLErrors( nvmlDeviceGetClock( device, NVML_CLOCK_MEM, NVML_CLOCK_ID_CURRENT, &deviceStats.clockMemory ) );
+			checkNVMLErrors( nvmlDeviceGetClock( device, NVML_CLOCK_MEM, NVML_CLOCK_ID_APP_CLOCK_TARGET, &deviceStats.clockMemoryMax ) );
+			checkNVMLErrors( nvmlDeviceGetPerformanceState( device, &deviceStats.performanceState ) );
 
-			timeSteps.push_back( temp );
+			timeSteps.push_back( deviceStats );
 
 			std::this_thread::sleep_for( std::chrono::milliseconds( 1 ) );
 		}

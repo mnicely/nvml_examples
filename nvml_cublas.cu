@@ -41,9 +41,9 @@
  */
 
 /* Includes, system */
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <cstdio>
+#include <cstdlib>
+#include <string>
 
 /* Includes, cuda */
 #include <cublas_v2.h>
@@ -120,8 +120,11 @@ int main( int argc, char **argv ) {
 
 	int dev = findCudaDevice( argc, ( const char ** ) argv );
 	if ( dev == -1 ) throw std::runtime_error( "!!!! No CUDA device found\n" );
+    
+    cudaSetDevice(1);
+    dev = 1;
 
-	std::string filename = { "../data/gpuStats.csv" };
+	std::string filename = { "data/gpuStats.csv" };
 
 	// Create NVML class to retrieve GPU stats
 	nvmlClass nvml( dev, filename );
