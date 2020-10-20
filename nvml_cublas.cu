@@ -124,20 +124,7 @@ void calculate( int const &m, int const &n, int const &k, nvmlClass &nvml ) {
     data_type *d_C_ptr = thrust::raw_pointer_cast( &d_C[0] );
 
     /* Performs operation using cublas */
-    cublasSgemm( handle,
-                 CUBLAS_OP_N,
-                 CUBLAS_OP_N,
-                 m,
-                 n,
-                 k,
-                 &alpha,
-                 d_A_ptr,
-                 lda,
-                 d_B_ptr,
-                 ldb,
-                 &beta,
-                 d_C_ptr,
-                 ldc );
+    cublasSgemm( handle, CUBLAS_OP_N, CUBLAS_OP_N, m, n, k, &alpha, d_A_ptr, lda, d_B_ptr, ldb, &beta, d_C_ptr, ldc );
     CUDA_RT_CALL( cudaDeviceSynchronize( ) );
 
     /* Allocate host memory for reading back the result from device memory */
