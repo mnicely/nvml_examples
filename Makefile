@@ -1,7 +1,7 @@
 NVCC	:=nvcc --cudart=static -ccbin g++
-CFLAGS	:=-O3 -std=c++11
+CFLAGS	:=-O3 -std=c++14
 ARCHES	:=-gencode arch=compute_70,code=\"compute_70,sm_70\"
-INC_DIR	:=-I/usr/local/cuda/samples/common/inc
+INC_DIR	:=
 LIB_DIR	:=
 LIBS	:=-lcublas -lnvidia-ml
 

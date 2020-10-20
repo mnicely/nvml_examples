@@ -48,12 +48,30 @@
 /* Includes, cuda */
 #include <cublas_v2.h>
 #include <cuda_runtime.h>
-#include <helper_cuda.h>
 #include <thrust/device_vector.h>
 #include <thrust/host_vector.h>
 
 /* Includes, custom */
 #include "nvmlClass.h"
+
+// *************** FOR ERROR CHECKING *******************
+#ifndef CUDA_RT_CALL
+#define CUDA_RT_CALL( call )                                                                                           \
+    {                                                                                                                  \
+        auto status = static_cast<cudaError_t>( call );                                                                \
+        if ( status != cudaSuccess )                                                                                   \
+            fprintf( stderr,                                                                                           \
+                     "ERROR: CUDA RT call \"%s\" in line %d of file %s failed "                                        \
+                     "with "                                                                                           \
+                     "%s (%d).\n",                                                                                     \
+                     #call,                                                                                            \
+                     __LINE__,                                                                                         \
+                     __FILE__,                                                                                         \
+                     cudaGetErrorString( status ),                                                                     \
+                     status );                                                                                         \
+    }
+#endif  // CUDA_RT_CALL
+// *************** FOR ERROR CHECKING *******************
 
 void calculate( int const &m, int const &n, int const &k, nvmlClass &nvml ) {
 
@@ -71,7 +89,7 @@ void calculate( int const &m, int const &n, int const &k, nvmlClass &nvml ) {
     cublasHandle_t handle;
 
     /* Initialize CUBLAS */
-    checkCudaErrors( cublasCreate( &handle ) );
+    CUDA_RT_CALL( cublasCreate( &handle ) );
 
     /* Initialize CUBLAS */
     printf( "cublasSgemm %dx%dx%d test running..\n", m, n, k );
@@ -120,7 +138,7 @@ void calculate( int const &m, int const &n, int const &k, nvmlClass &nvml ) {
                  &beta,
                  d_C_ptr,
                  ldc );
-    checkCudaErrors( cudaDeviceSynchronize( ) );
+    CUDA_RT_CALL( cudaDeviceSynchronize( ) );
 
     /* Allocate host memory for reading back the result from device memory */
     h_C = d_C;
@@ -132,17 +150,15 @@ void calculate( int const &m, int const &n, int const &k, nvmlClass &nvml ) {
     threadKill.join( );
 
     /* Shutdown */
-    checkCudaErrors( cublasDestroy( handle ) );
+    CUDA_RT_CALL( cublasDestroy( handle ) );
 }
 
 /* Main */
 int main( int argc, char **argv ) {
 
-    int dev = findCudaDevice( argc, ( const char ** )argv );
-    if ( dev == -1 )
-        throw std::runtime_error( "!!!! No CUDA device found\n" );
-
-    checkCudaErrors( cudaSetDevice( dev ) );
+    int dev {};
+    cudaGetDevice( &dev );
+    CUDA_RT_CALL( cudaSetDevice( dev ) );
 
     std::string const filename = { "data/gpuStats.csv" };
 
